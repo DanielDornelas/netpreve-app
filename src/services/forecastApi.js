@@ -80,6 +80,18 @@ export async function getModels() {
   return data.items;
 }
 
+// GET /api/v1/locations — pontos de medição que têm previsão
+export async function getLocations() {
+  const data = await request('/locations');
+  return data.items;
+}
+
+// GET /api/v1/forecasts/probes/{probeId}?model_id= — previsão de um ponto escolhido
+export function getProbeForecast({ probeId, modelId }) {
+  const query = toQuery({ model_id: modelId });
+  return request(`/forecasts/probes/${probeId}?${query}`);
+}
+
 // GET /api/v1/forecasts/nearby?lat=&lon=&model_id=&radius_km=
 export function getNearbyForecast({ latitude, longitude, modelId, radiusKm }) {
   const query = toQuery({ lat: latitude, lon: longitude, model_id: modelId, radius_km: radiusKm });

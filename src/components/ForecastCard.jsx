@@ -9,9 +9,11 @@ import {
   qualityInfo,
 } from '../utils/formatters';
 
-// Recebe a resposta de GET /forecasts/nearby via props e só apresenta.
-export default function ForecastCard({ forecast }) {
-  const { model, prediction, assessment, recommendation, matchedProbe } = forecast;
+// Recebe a previsão via props e só apresenta.
+// `reference` é o texto sobre o ponto de medição (distância ou local escolhido).
+export default function ForecastCard({ forecast, reference }) {
+  const { model, prediction, assessment, recommendation } = forecast;
+  const confidence = prediction.modelConfidence;
   const info = qualityInfo(assessment.quality);
 
   return (
@@ -48,9 +50,11 @@ export default function ForecastCard({ forecast }) {
         <Text style={styles.recommendationMessage}>{recommendation.message}</Text>
       </View>
 
-      <Text style={styles.reference}>
-        Ponto de medição a {matchedProbe.distanceKm.toString().replace('.', ',')} km de você
-      </Text>
+      {confidence !== null && confidence !== undefined && (
+        <Text style={styles.reference}>Confiança do modelo nesta previsão: {Math.round(confidence * 100)}%</Text>
+      )}
+
+      <Text style={styles.reference}>{reference}</Text>
     </View>
   );
 }
@@ -128,6 +132,6 @@ const styles = StyleSheet.create({
   reference: {
     color: COLORS.muted,
     fontSize: 13,
-    marginTop: 16,
+    marginTop: 12,
   },
 });

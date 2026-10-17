@@ -34,6 +34,23 @@ export const ACTIVITIES = [
   { code: 'MESSAGING', label: 'Mensagens' },
 ];
 
+// Ordem de preferência para escolher o melhor horário.
+const QUALITY_RANK = { GOOD: 0, MODERATE: 1, UNSTABLE: 2 };
+
+// Melhor horário da linha do tempo: melhor qualidade e, no empate, menor tempo de resposta.
+export function bestTimelineItem(items) {
+  return items.reduce((best, item) => {
+    if (!best) return item;
+    const rankDiff = (QUALITY_RANK[item.quality] ?? 3) - (QUALITY_RANK[best.quality] ?? 3);
+    if (rankDiff !== 0) return rankDiff < 0 ? item : best;
+    return item.predictedAvgRttMs < best.predictedAvgRttMs ? item : best;
+  }, null);
+}
+
+// Texto usado quando a resposta da API não traz o aviso (previsão de um ponto escolhido na lista).
+export const DEFAULT_DISCLAIMER =
+  'A previsão está associada à probe RIPE Atlas selecionada como referência geográfica e não representa uma medição direta do dispositivo do usuário.';
+
 export function qualityInfo(code) {
   return QUALITY[code] || { label: code, description: '', color: COLORS.muted, bars: 0 };
 }

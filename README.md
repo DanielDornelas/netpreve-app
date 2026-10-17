@@ -15,11 +15,12 @@ O app consome a **Connectivity Forecast API** da squad Soft in. Hard out.:
 |---|---|---|
 | Escolha do modelo | Os modelos de previsão disponíveis. A escolha fica salva no aparelho. | `GET /api/v1/models` |
 | Previsão | Qualidade esperada, tempo de resposta, perda de pacotes e recomendação para o ponto de medição mais próximo | `GET /api/v1/forecasts/nearby` |
-| Próximas horas | A qualidade prevista hora a hora; tocar num horário o seleciona | `GET /api/v1/forecasts/probes/{id}/timeline` |
+| Escolher local | Os pontos de medição em lista (os mais próximos primeiro); tocar num deles mostra a previsão daquela região, com a confiança do modelo | `GET /api/v1/locations` e `GET /api/v1/forecasts/probes/{id}` |
+| Próximas horas | A qualidade prevista hora a hora, com o **melhor horário** em destaque; tocar num horário o seleciona | `GET /api/v1/forecasts/probes/{id}/timeline` |
 | Vai dar para fazer? | Se o horário escolhido é bom para uma atividade (chamada de vídeo, streaming, mensagens…) | `POST /api/v1/activity/check` |
 | Comparar modelos | A previsão de todos os modelos lado a lado, para o mesmo local e horário (sem declarar vencedor) | `GET /api/v1/forecasts/probes/{id}/compare` |
 
-Se o usuário negar a localização, o app oferece um **local de exemplo (São Paulo)**. Sem conexão com a API, ele mostra uma mensagem com a opção de tentar de novo, em vez de travar.
+Se o usuário negar a localização, ele pode **escolher um local na lista** de pontos de medição. Sem conexão com a API, ele mostra uma mensagem com a opção de tentar de novo, em vez de travar.
 
 ---
 
@@ -145,10 +146,12 @@ src/
     ModelSelectScreen.jsx     escolha do modelo de previsão
     HomeScreen.jsx            localização, previsão, próximas horas e atividade
     CompareScreen.jsx         comparação dos modelos no mesmo local e horário
+    LocationPickerScreen.jsx  lista de pontos de medição para escolher um local
   components/
     ForecastCard.jsx          cartão com a previsão
     QualitySignal.jsx         barrinhas de sinal (Boa 3, Moderada 2, Instável 1)
     TimelineList.jsx          faixa das próximas horas
+    BestTimeHint.jsx          destaque do melhor horário da faixa
     ActivityChecker.jsx       escolha da atividade e resultado
     StatusMessage.jsx         telas de carregando, erro e vazio
   services/
@@ -156,8 +159,11 @@ src/
   storage/
     modelStorage.js           guarda o modelo escolhido no aparelho
   utils/
-    formatters.js             cores, rótulos, horários (UTC → hora local) e mensagens de erro
+    formatters.js             cores, rótulos, horários (UTC → hora local), melhor horário e mensagens de erro
+    places.js                 distância entre pontos e nome da região de cada ponto de medição
 ```
+
+> A API informa só as coordenadas dos pontos de medição, sem nomes de cidades. Os nomes que aparecem no app ("Região de São Paulo") vêm de uma lista de referência do próprio app, em `src/utils/places.js`.
 
 Cada arquivo tem uma responsabilidade: as **telas** controlam o estado e as interações, os **componentes** só apresentam o que recebem por props, e o **serviço** é o único que conversa com a API.
 

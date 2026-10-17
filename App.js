@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import CompareScreen from './src/screens/CompareScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import LocationPickerScreen from './src/screens/LocationPickerScreen';
 import ModelSelectScreen from './src/screens/ModelSelectScreen';
 import { clearSelectedModelId, loadSelectedModelId, saveSelectedModelId } from './src/storage/modelStorage';
 import { COLORS } from './src/utils/formatters';
@@ -16,6 +17,10 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [choosingModel, setChoosingModel] = useState(false);
   const [compareParams, setCompareParams] = useState(null);
+  // null = tela fechada; { userCoords } = tela de escolha de local aberta
+  const [locationPicker, setLocationPicker] = useState(null);
+  // null = usar a localização do aparelho; senão, o ponto escolhido na lista
+  const [probe, setProbe] = useState(null);
 
   useEffect(() => {
     async function restoreModel() {
@@ -38,6 +43,41 @@ export default function App() {
     setModelId(null);
   }
 
+  function handleSelectProbe(item) {
+    setProbe(item);
+    setLocationPicker(null);
+  }
+
+  function handleUseMyLocation() {
+    setProbe(null);
+    setLocationPicker(null);
+  }
+
+  function renderOverlay() {
+    if (compareParams) {
+      return (
+        <CompareScreen
+          probeId={compareParams.probeId}
+          predictionFor={compareParams.predictionFor}
+          currentModelId={modelId}
+          onBack={() => setCompareParams(null)}
+        />
+      );
+    }
+    if (locationPicker) {
+      return (
+        <LocationPickerScreen
+          userCoords={locationPicker.userCoords}
+          currentProbeId={probe ? probe.probeId : null}
+          onSelectProbe={handleSelectProbe}
+          onUseMyLocation={handleUseMyLocation}
+          onBack={() => setLocationPicker(null)}
+        />
+      );
+    }
+    return null;
+  }
+
   function renderScreen() {
     if (!ready) {
       return (
@@ -57,26 +97,22 @@ export default function App() {
       );
     }
 
-    // A HomeScreen continua montada (só fica escondida) enquanto a comparação está aberta,
+    // A HomeScreen continua montada (só fica escondida) enquanto outra tela está aberta por cima,
     // para não perder a previsão e o horário selecionado ao voltar.
+    const overlay = renderOverlay();
     return (
       <>
-        <View style={[styles.fill, compareParams && styles.hidden]}>
+        <View style={[styles.fill, overlay && styles.hidden]}>
           <HomeScreen
             modelId={modelId}
+            probe={probe}
             onChangeModel={() => setChoosingModel(true)}
             onModelUnavailable={handleModelUnavailable}
             onCompare={setCompareParams}
+            onPickLocation={(userCoords) => setLocationPicker({ userCoords })}
           />
         </View>
-        {compareParams && (
-          <CompareScreen
-            probeId={compareParams.probeId}
-            predictionFor={compareParams.predictionFor}
-            currentModelId={modelId}
-            onBack={() => setCompareParams(null)}
-          />
-        )}
+        {overlay}
       </>
     );
   }
