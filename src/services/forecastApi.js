@@ -93,6 +93,13 @@ export async function getTimeline({ probeId, modelId, limit = 24 }) {
   return data.items;
 }
 
+// GET /api/v1/forecasts/probes/{probeId}/compare?prediction_for=
+// Previsão de todos os modelos ativos para o mesmo ponto e horário.
+export function compareModels({ probeId, predictionFor }) {
+  const query = toQuery({ prediction_for: predictionFor });
+  return request(`/forecasts/probes/${probeId}/compare?${query}`);
+}
+
 // POST /api/v1/activity/check
 export function checkActivity({ modelId, latitude, longitude, dateTime, activity }) {
   return request('/activity/check', {

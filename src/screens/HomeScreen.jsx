@@ -12,7 +12,7 @@ import { COLORS, describeError } from '../utils/formatters';
 const SAMPLE_LOCATION = { latitude: -23.5505, longitude: -46.6333, isSample: true };
 
 // Tela principal: localização → previsão perto do usuário → linha do tempo → atividade.
-export default function HomeScreen({ modelId, onChangeModel, onModelUnavailable }) {
+export default function HomeScreen({ modelId, onChangeModel, onModelUnavailable, onCompare }) {
   const [coords, setCoords] = useState(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [forecast, setForecast] = useState(null);
@@ -162,6 +162,14 @@ export default function HomeScreen({ modelId, onChangeModel, onModelUnavailable 
 
         <ForecastCard forecast={forecast} />
 
+        <Pressable
+          onPress={() => onCompare({ probeId: forecast.matchedProbe.probeId, predictionFor: selectedTime })}
+          style={styles.compareButton}
+          accessibilityRole="button"
+        >
+          <Text style={styles.compareText}>Comparar com os outros modelos</Text>
+        </Pressable>
+
         <Text style={styles.sectionTitle}>Próximas horas</Text>
         <TimelineList items={timeline} selectedTime={selectedTime} onSelect={handleSelectTime} />
 
@@ -219,6 +227,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   changeModel: {
+    color: COLORS.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  compareButton: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  compareText: {
     color: COLORS.primary,
     fontSize: 15,
     fontWeight: '600',

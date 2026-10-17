@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import CompareScreen from './src/screens/CompareScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ModelSelectScreen from './src/screens/ModelSelectScreen';
 import { clearSelectedModelId, loadSelectedModelId, saveSelectedModelId } from './src/storage/modelStorage';
@@ -14,6 +15,7 @@ export default function App() {
   const [modelId, setModelId] = useState(null);
   const [ready, setReady] = useState(false);
   const [choosingModel, setChoosingModel] = useState(false);
+  const [compareParams, setCompareParams] = useState(null);
 
   useEffect(() => {
     async function restoreModel() {
@@ -55,12 +57,27 @@ export default function App() {
       );
     }
 
+    // A HomeScreen continua montada (só fica escondida) enquanto a comparação está aberta,
+    // para não perder a previsão e o horário selecionado ao voltar.
     return (
-      <HomeScreen
-        modelId={modelId}
-        onChangeModel={() => setChoosingModel(true)}
-        onModelUnavailable={handleModelUnavailable}
-      />
+      <>
+        <View style={[styles.fill, compareParams && styles.hidden]}>
+          <HomeScreen
+            modelId={modelId}
+            onChangeModel={() => setChoosingModel(true)}
+            onModelUnavailable={handleModelUnavailable}
+            onCompare={setCompareParams}
+          />
+        </View>
+        {compareParams && (
+          <CompareScreen
+            probeId={compareParams.probeId}
+            predictionFor={compareParams.predictionFor}
+            currentModelId={modelId}
+            onBack={() => setCompareParams(null)}
+          />
+        )}
+      </>
     );
   }
 
@@ -78,6 +95,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  fill: {
+    flex: 1,
+  },
+  hidden: {
+    display: 'none',
   },
   center: {
     flex: 1,
