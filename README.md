@@ -23,6 +23,132 @@ O app consome a **Connectivity Forecast API** da squad Soft in. Hard out.:
 
 Se o usuário negar a localização, ele pode **escolher um local na lista** de pontos de medição. Sem conexão com a API, ele mostra uma mensagem com a opção de tentar de novo, em vez de travar.
 
+## Endpoints e como o app traduz cada um
+
+Toda chamada à API fica em `src/services/forecastApi.js`. O app **não altera os dados**: ele só os transforma em texto, cor e ícone. As tabelas abaixo mostram, para cada endpoint, o que a API devolve e o que aparece na tela.
+
+### `GET /api/v1/health`
+
+| A API devolve | O app mostra |
+|---|---|
+| `{"status": "ok"}` | Bolinha verde e "Servidor conectado", no topo |
+| Sem resposta em 15 s ou erro de rede | Bolinha vermelha e "Sem conexão" |
+
+O app confere a cada 30 segundos (`ServerStatus.jsx`); tocar no indicador força uma nova verificação.
+
+### `GET /api/v1/models`
+
+| Campo da API | Na tela |
+|---|---|
+| `id` | Não aparece: é salvo no aparelho (`modelStorage.js`) e enviado como `model_id` em todas as outras chamadas |
+| `name` | Nome do modelo ("Modelo A") e a letra no círculo ("A") |
+| `groupName`, `version` | "Grupo 1, versão 1.0" |
+| `description` | Texto pequeno abaixo do nome |
+
+A ordem é a da API (por nome), e o texto da tela avisa que a lista não é um ranking.
+
+### `GET /api/v1/forecasts/nearby?lat=&lon=&model_id=`
+
+A latitude e a longitude vêm do aparelho (`expo-location`).
+
+| Campo da API | Na tela |
+|---|---|
+| `model.name`, `model.version` | "Modelo A, versão 1.0", no topo do cartão |
+| `assessment.quality` | Cor do cartão, barrinhas de sinal e a palavra grande (veja a tabela de qualidade abaixo) |
+| `prediction.predictionFor` | "Previsão para 20/08 às 20:00", convertido de UTC para o horário do aparelho |
+| `prediction.predictedAvgRttMs` | "73 ms", com o rótulo "Tempo de resposta" |
+| `prediction.predictedPacketLossPct` | "3,9%", com o rótulo "Perda de pacotes" |
+| `recommendation.code` | Título da recomendação (veja a tabela de recomendações abaixo) |
+| `recommendation.message` | Texto da recomendação, exibido como veio |
+| `matchedProbe.distanceKm` | "Ponto de medição a 44,7 km de você" |
+| `matchedProbe.probeId` | Não aparece: é usado para buscar as próximas horas e a comparação |
+| `metadata.disclaimer` | Aviso no fim da tela |
+
+### `GET /api/v1/locations`
+
+| Campo da API | Na tela |
+|---|---|
+| `probeId` | "ponto 900001" |
+| `countryCode` | "Brasil" (`BR` traduzido pelo app) |
+| `location.latitude`, `location.longitude` | "Região de São Paulo" e "45 km", calculados pelo app a partir das coordenadas; a lista é ordenada do mais próximo ao mais distante |
+
+A API não manda nomes de cidades: o nome da região vem de uma lista de referência do próprio app (`places.js`).
+
+### `GET /api/v1/forecasts/probes/{id}?model_id=`
+
+Usado quando o usuário escolhe um local na lista. A tela é a mesma da previsão perto de você, com duas diferenças:
+
+| Campo da API | Na tela |
+|---|---|
+| `prediction.modelConfidence` | "Confiança do modelo nesta previsão: 82%" (de 0 a 1, multiplicado por 100); não aparece quando vem `null` |
+| `location` | "Local escolhido: Região de Manaus (ponto 900010)" |
+
+### `GET /api/v1/forecasts/probes/{id}/timeline?model_id=&limit=24`
+
+| Campo da API | Na tela |
+|---|---|
+| `items[].predictionFor` | A hora da coluna ("21h") e o dia acima dela ("19/08"), no horário do aparelho |
+| `items[].quality` | Altura e cor da coluna: 3/3 verde (Boa), 2/3 âmbar (Moderada), 1/3 vermelha (Instável) |
+| `items[].predictedAvgRttMs` | "63 ms", abaixo da hora |
+
+O **melhor horário** é escolhido pelo app entre esses itens: a melhor qualidade e, no empate, o menor tempo de resposta. Nenhuma chamada extra é feita.
+
+### `GET /api/v1/forecasts/probes/{id}/compare?prediction_for=`
+
+O `prediction_for` é o horário selecionado na faixa de próximas horas.
+
+| Campo da API | Na tela |
+|---|---|
+| `models[].modelName` | Nome de cada modelo; o que está em uso ganha a marca "Em uso" |
+| `models[].quality` | Barrinhas e palavra colorida ("Boa", "Moderada", "Instável") |
+| `models[].predictedAvgRttMs` | Barra proporcional ao maior tempo da comparação e o texto "58 ms de tempo de resposta" |
+| `models[].predictedPacketLossPct` | "0,8% de perda" |
+| `predictionFor` | "Previsão de cada modelo para 20/08 às 20:00" |
+
+### `POST /api/v1/activity/check`
+
+O app envia `modelId`, `latitude`, `longitude`, o horário selecionado (`dateTime`) e a atividade escolhida nos botões (`VIDEO_CALL`, `AUDIO_CALL`, `STREAMING`, `FILE_UPLOAD`, `WEB_BROWSING` ou `MESSAGING`).
+
+| Campo da API | Na tela |
+|---|---|
+| `suitable: true` | Ícone verde e "Bom momento para isso" |
+| `suitable: false` | Ícone vermelho e "Melhor escolher outro horário" |
+| `forecast.quality` | "Qualidade prevista: Moderada" |
+| `recommendation.code` e `message` | Título e texto da recomendação |
+
+### Traduções usadas em todas as telas
+
+**Qualidade** (`assessment.quality` e `quality`), em `src/utils/formatters.js`:
+
+| Código da API | Texto | Descrição | Cor | Barrinhas |
+|---|---|---|---|---|
+| `GOOD` | Boa | Conexão prevista adequada | Verde `#1F8A78` | 3 |
+| `MODERATE` | Moderada | Pode haver instabilidade | Âmbar `#D98A1F` | 2 |
+| `UNSTABLE` | Instável | Considere recursos offline | Vermelho `#C8434F` | 1 |
+
+**Recomendação** (`recommendation.code`). O app usa o código, que é estável, para escolher o título; o `message` da API aparece logo abaixo.
+
+| Código da API | Título no app |
+|---|---|
+| `NORMAL_USE` | Uso normal |
+| `REDUCE_NETWORK_USAGE` | Reduza o uso de rede |
+| `PREPARE_OFFLINE` | Prepare conteúdo offline |
+
+**Erros** (`error.code`). O app troca o código por uma mensagem que diz o que fazer:
+
+| Código | Mensagem no app |
+|---|---|
+| Sem resposta (rede, modo avião, API desligada) | Sem conexão com o servidor. Verifique a internet do aparelho e o endereço da API. |
+| Tempo esgotado (60 s) | O servidor demorou para responder. Se ele estava hibernando, tente de novo em instantes. |
+| `VALIDATION_ERROR` (422) | A localização ou o modelo enviados são inválidos. |
+| `NO_PROBE_IN_RANGE` | Nenhum ponto de medição perto da sua localização. |
+| `PROBE_NOT_FOUND` | Não há previsão para este local com o modelo escolhido. |
+| `MODEL_NOT_FOUND`, `MODEL_INACTIVE` | O app esquece o modelo salvo e volta para a escolha de modelo. |
+| `NO_COMMON_PREDICTION` | Os modelos não têm previsão para o mesmo horário neste local. |
+| `DATASET_UNAVAILABLE`, `INTERNAL_ERROR` | O servidor está com problemas. Tente novamente mais tarde. |
+
+**Horários.** A API envia tudo em UTC (sufixo `Z`). O app converte para o horário do aparelho: no Brasil (UTC−3), `2026-08-20T23:00:00Z` aparece como **20/08 às 20:00**.
+
 ---
 
 ## Antes de começar
@@ -74,7 +200,7 @@ npm run web
 
 O app abre no navegador, em `http://localhost:8081`.
 
-Para ver no tamanho de um celular, aperte **F12** e depois **Ctrl+Shift+M**. Quando o navegador pedir a localização, clique em **Permitir**.
+No computador, o app aparece dentro de uma moldura de celular. Quando o navegador pedir a localização, clique em **Permitir**.
 
 ### Para parar
 
