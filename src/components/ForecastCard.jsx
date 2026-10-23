@@ -1,60 +1,66 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import QualitySignal from './QualitySignal';
-import {
-  COLORS,
-  RECOMMENDATION_TITLES,
-  formatDateTime,
-  formatMs,
-  formatPercent,
-  qualityInfo,
-} from '../utils/formatters';
+import { COLORS, RADIUS } from '../utils/theme';
+import { RECOMMENDATION_TITLES, formatDateTime, formatMs, formatPercent, qualityInfo } from '../utils/formatters';
 
-// Recebe a previsão via props e só apresenta.
-// `reference` é o texto sobre o ponto de medição (distância ou local escolhido).
+// Cartão principal, no estilo de um app de previsão do tempo:
+// a parte de cima é pintada com a cor da qualidade; a de baixo traz os números e a recomendação.
 export default function ForecastCard({ forecast, reference }) {
   const { model, prediction, assessment, recommendation } = forecast;
-  const confidence = prediction.modelConfidence;
   const info = qualityInfo(assessment.quality);
+  const confidence = prediction.modelConfidence;
 
   return (
     <View style={styles.card}>
-      <Text style={styles.model}>
-        {model.name} · versão {model.version}
-      </Text>
-
-      <View style={styles.qualityRow}>
-        <QualitySignal quality={assessment.quality} />
-        <View style={styles.qualityText}>
-          <Text style={[styles.qualityLabel, { color: info.color }]}>{info.label}</Text>
-          <Text style={styles.qualityDescription}>{info.description}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.when}>Previsão para {formatDateTime(prediction.predictionFor)}</Text>
-
-      <View style={styles.metrics}>
-        <View style={styles.metric}>
-          <Text style={styles.metricValue}>{formatMs(prediction.predictedAvgRttMs)}</Text>
-          <Text style={styles.metricLabel}>Tempo de resposta</Text>
-        </View>
-        <View style={styles.metric}>
-          <Text style={styles.metricValue}>{formatPercent(prediction.predictedPacketLossPct)}</Text>
-          <Text style={styles.metricLabel}>Perda de pacotes</Text>
-        </View>
-      </View>
-
-      <View style={[styles.recommendation, { borderLeftColor: info.color }]}>
-        <Text style={styles.recommendationTitle}>
-          {RECOMMENDATION_TITLES[recommendation.code] || recommendation.code}
+      <View style={[styles.hero, { backgroundColor: info.color }]}>
+        <Text style={styles.heroModel}>
+          {model.name}, versão {model.version}
         </Text>
-        <Text style={styles.recommendationMessage}>{recommendation.message}</Text>
+        <View style={styles.heroRow}>
+          <QualitySignal quality={assessment.quality} size="hero" tone="light" />
+          <View style={styles.heroText}>
+            <Text style={styles.heroLabel}>{info.label}</Text>
+            <Text style={styles.heroDescription}>{info.description}</Text>
+          </View>
+        </View>
+        <View style={styles.heroTime}>
+          <Ionicons name="time-outline" size={15} color="#FFFFFF" />
+          <Text style={styles.heroTimeText}>Previsão para {formatDateTime(prediction.predictionFor)}</Text>
+        </View>
       </View>
 
-      {confidence !== null && confidence !== undefined && (
-        <Text style={styles.reference}>Confiança do modelo nesta previsão: {Math.round(confidence * 100)}%</Text>
-      )}
+      <View style={styles.body}>
+        <View style={styles.metrics}>
+          <Metric icon="speedometer-outline" value={formatMs(prediction.predictedAvgRttMs)} label="Tempo de resposta" />
+          <Metric icon="pulse-outline" value={formatPercent(prediction.predictedPacketLossPct)} label="Perda de pacotes" />
+        </View>
 
-      <Text style={styles.reference}>{reference}</Text>
+        <View style={[styles.recommendation, { backgroundColor: info.soft }]}>
+          <Text style={[styles.recommendationTitle, { color: info.color }]}>
+            {RECOMMENDATION_TITLES[recommendation.code] || recommendation.code}
+          </Text>
+          <Text style={styles.recommendationMessage}>{recommendation.message}</Text>
+        </View>
+
+        {confidence !== null && confidence !== undefined && (
+          <Text style={styles.footnote}>Confiança do modelo nesta previsão: {Math.round(confidence * 100)}%</Text>
+        )}
+        <View style={styles.reference}>
+          <Ionicons name="location-outline" size={14} color={COLORS.muted} />
+          <Text style={styles.footnote}>{reference}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Metric({ icon, value, label }) {
+  return (
+    <View style={styles.metric}>
+      <Ionicons name={icon} size={18} color={COLORS.muted} />
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
     </View>
   );
 }
@@ -62,64 +68,81 @@ export default function ForecastCard({ forecast, reference }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: RADIUS.hero,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.line,
   },
-  model: {
-    color: COLORS.muted,
+  hero: {
+    padding: 22,
+    gap: 14,
+  },
+  heroModel: {
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 14,
-    marginBottom: 16,
+    fontWeight: '600',
   },
-  qualityRow: {
+  heroRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 16,
+    gap: 18,
   },
-  qualityText: {
+  heroText: {
     flex: 1,
   },
-  qualityLabel: {
-    fontSize: 34,
-    fontWeight: '700',
-    lineHeight: 38,
+  heroLabel: {
+    color: '#FFFFFF',
+    fontSize: 44,
+    fontWeight: '800',
+    lineHeight: 48,
+    letterSpacing: -1,
   },
-  qualityDescription: {
-    color: COLORS.ink,
+  heroDescription: {
+    color: '#FFFFFF',
     fontSize: 16,
   },
-  when: {
-    color: COLORS.muted,
+  heroTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  heroTimeText: {
+    color: '#FFFFFF',
     fontSize: 14,
-    marginTop: 16,
+  },
+  body: {
+    padding: 18,
+    gap: 14,
   },
   metrics: {
     flexDirection: 'row',
-    marginTop: 16,
     gap: 12,
   },
   metric: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: RADIUS.control,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    padding: 14,
+    gap: 4,
   },
   metricValue: {
     color: COLORS.ink,
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.5,
   },
   metricLabel: {
     color: COLORS.muted,
     fontSize: 13,
-    marginTop: 2,
   },
   recommendation: {
-    borderLeftWidth: 4,
-    paddingLeft: 12,
-    marginTop: 20,
+    borderRadius: RADIUS.control,
+    padding: 14,
+    gap: 4,
   },
   recommendationTitle: {
-    color: COLORS.ink,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -127,11 +150,14 @@ const styles = StyleSheet.create({
     color: COLORS.ink,
     fontSize: 15,
     lineHeight: 21,
-    marginTop: 2,
   },
   reference: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  footnote: {
     color: COLORS.muted,
     fontSize: 13,
-    marginTop: 12,
   },
 });

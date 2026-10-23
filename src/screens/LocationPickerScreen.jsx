@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import StatusMessage from '../components/StatusMessage';
 import { getLocations } from '../services/forecastApi';
-import { COLORS, describeError } from '../utils/formatters';
+import { describeError } from '../utils/formatters';
 import { countryName, distanceKm, placeName } from '../utils/places';
+import { COLORS, RADIUS } from '../utils/theme';
 
 // Lista os pontos de medição (GET /api/v1/locations) para o usuário escolher um local
 // sem depender do GPS. Se o app conhece a posição do usuário, ordena pela distância.
@@ -44,6 +46,7 @@ export default function LocationPickerScreen({ userCoords, currentProbeId, onSel
     if (error) {
       return (
         <StatusMessage
+          icon="cloud-offline-outline"
           title="Não foi possível carregar os locais"
           message={describeError(error)}
           actions={[
@@ -61,8 +64,18 @@ export default function LocationPickerScreen({ userCoords, currentProbeId, onSel
           {userCoords ? ' Os mais próximos de você aparecem primeiro.' : ''}
         </Text>
 
-        <Pressable onPress={onUseMyLocation} style={styles.myLocation} accessibilityRole="button">
-          <Text style={styles.myLocationText}>Usar minha localização</Text>
+        <Pressable
+          onPress={onUseMyLocation}
+          style={[styles.option, !currentProbeId && styles.optionSelected]}
+          accessibilityRole="button"
+        >
+          <View style={[styles.icon, styles.iconPrimary]}>
+            <Ionicons name="navigate" size={18} color="#FFFFFF" />
+          </View>
+          <View style={styles.optionText}>
+            <Text style={styles.place}>Usar minha localização</Text>
+            <Text style={styles.detail}>O ponto mais próximo de onde você está</Text>
+          </View>
         </Pressable>
 
         {locations.map((item) => {
@@ -75,11 +88,20 @@ export default function LocationPickerScreen({ userCoords, currentProbeId, onSel
               accessibilityRole="button"
               accessibilityState={{ selected }}
             >
-              <Text style={styles.place}>{placeName(item.location)}</Text>
-              <Text style={styles.detail}>
-                {countryName(item.countryCode)} · ponto {item.probeId}
-                {item.distance !== null ? ` · ${Math.round(item.distance)} km de você` : ''}
-              </Text>
+              <View style={styles.icon}>
+                <Ionicons name="location-outline" size={18} color={COLORS.primary} />
+              </View>
+              <View style={styles.optionText}>
+                <Text style={styles.place}>{placeName(item.location)}</Text>
+                <Text style={styles.detail}>
+                  {countryName(item.countryCode)}, ponto {item.probeId}
+                </Text>
+              </View>
+              {item.distance !== null && (
+                <View style={styles.distance}>
+                  <Text style={styles.distanceText}>{Math.round(item.distance)} km</Text>
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -90,10 +112,10 @@ export default function LocationPickerScreen({ userCoords, currentProbeId, onSel
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Escolher local</Text>
-        <Pressable onPress={onBack} accessibilityRole="button">
-          <Text style={styles.back}>Voltar</Text>
+        <Pressable onPress={onBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Voltar">
+          <Ionicons name="arrow-back" size={22} color={COLORS.ink} />
         </Pressable>
+        <Text style={styles.title}>Escolher local</Text>
       </View>
       {renderBody()}
     </ScrollView>
@@ -107,55 +129,80 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
+  },
+  back: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     color: COLORS.ink,
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  back: {
-    color: COLORS.primary,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   subtitle: {
     color: COLORS.muted,
     fontSize: 15,
     lineHeight: 21,
-  },
-  myLocation: {
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
     marginBottom: 4,
   },
-  myLocationText: {
-    color: COLORS.primary,
-    fontSize: 15,
-    fontWeight: '600',
-  },
   option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    padding: 14,
   },
   optionSelected: {
     borderColor: COLORS.primary,
+    borderWidth: 2,
+    padding: 13,
+  },
+  icon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconPrimary: {
+    backgroundColor: COLORS.primary,
+  },
+  optionText: {
+    flex: 1,
+    gap: 2,
   },
   place: {
     color: COLORS.ink,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
   },
   detail: {
     color: COLORS.muted,
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 13,
+  },
+  distance: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  distanceText: {
+    color: COLORS.ink,
+    fontSize: 13,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
 });

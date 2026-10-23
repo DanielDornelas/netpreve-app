@@ -24,9 +24,9 @@ function toQuery(params) {
     .join('&');
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
   try {
@@ -69,9 +69,10 @@ async function request(path, options = {}) {
   return data;
 }
 
-// GET /api/v1/health
+// GET /api/v1/health — confirma que a API está no ar.
+// Tempo limite menor: serve só para o indicador de conexão.
 export function getHealth() {
-  return request('/health');
+  return request('/health', {}, 15000);
 }
 
 // GET /api/v1/models — só modelos ativos, ordenados por nome

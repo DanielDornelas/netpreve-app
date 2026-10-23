@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,11 +8,16 @@ import HomeScreen from './src/screens/HomeScreen';
 import LocationPickerScreen from './src/screens/LocationPickerScreen';
 import ModelSelectScreen from './src/screens/ModelSelectScreen';
 import { clearSelectedModelId, loadSelectedModelId, saveSelectedModelId } from './src/storage/modelStorage';
-import { COLORS } from './src/utils/formatters';
+import { COLORS } from './src/utils/theme';
 
 // App.js: inicia o app e decide qual tela mostrar.
 // Sem modelo salvo → escolha de modelo. Com modelo salvo → previsão.
+// No navegador de um computador, o app aparece dentro de uma moldura de celular.
+const PHONE = { width: 390, height: 844, bezel: 12 };
+
 export default function App() {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const showPhoneFrame = Platform.OS === 'web' && windowWidth >= 600;
   const [modelId, setModelId] = useState(null);
   const [ready, setReady] = useState(false);
   const [choosingModel, setChoosingModel] = useState(false);
@@ -117,20 +122,75 @@ export default function App() {
     );
   }
 
+  if (showPhoneFrame) {
+    const phoneHeight = Math.min(PHONE.height, windowHeight - 48);
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <View style={styles.desk}>
+          <View style={[styles.phone, { height: phoneHeight }]}>
+            <View style={styles.screen}>
+              <View style={styles.island} />
+              <View style={styles.screenContent}>{renderScreen()}</View>
+            </View>
+          </View>
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <StatusBar style="dark" />
-        {renderScreen()}
+        <View style={styles.frame}>{renderScreen()}</View>
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  desk: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.line,
+  },
+  phone: {
+    width: PHONE.width + PHONE.bezel * 2,
+    padding: PHONE.bezel,
+    borderRadius: 56,
+    backgroundColor: COLORS.ink,
+  },
+  screen: {
+    flex: 1,
+    borderRadius: 44,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background,
+  },
+  island: {
+    position: 'absolute',
+    top: 10,
+    alignSelf: 'center',
+    width: 110,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.ink,
+    zIndex: 1,
+  },
+  screenContent: {
+    flex: 1,
+    paddingTop: 44,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  frame: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   fill: {
     flex: 1,

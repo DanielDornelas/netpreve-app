@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import QualitySignal from './QualitySignal';
-import { COLORS, bestTimelineItem, formatDateTime, formatMs, qualityInfo } from '../utils/formatters';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, RADIUS } from '../utils/theme';
+import { bestTimelineItem, formatDateTime, formatMs, qualityInfo } from '../utils/formatters';
 
 // Destaca o melhor horário da linha do tempo (melhor qualidade, depois menor tempo de resposta).
 // Usa só os dados que a timeline já trouxe: nenhuma chamada nova à API.
@@ -14,19 +15,23 @@ export default function BestTimeHint({ items, selectedTime, onSelect }) {
   const isSelected = best.predictionFor === selectedTime;
 
   return (
-    <View style={[styles.box, { borderLeftColor: info.color }]}>
-      <View style={styles.row}>
-        <QualitySignal quality={best.quality} size="small" />
+    <View style={[styles.box, { backgroundColor: info.soft }]}>
+      <Ionicons name="star" size={18} color={info.color} />
+      <View style={styles.text}>
         <Text style={styles.title}>Melhor horário: {formatDateTime(best.predictionFor)}</Text>
+        <Text style={styles.detail}>
+          Qualidade {info.label.toLowerCase()}, {formatMs(best.predictedAvgRttMs)} de tempo de resposta
+        </Text>
       </View>
-      <Text style={styles.text}>
-        Qualidade {info.label.toLowerCase()}, com tempo de resposta de {formatMs(best.predictedAvgRttMs)}.
-      </Text>
       {isSelected ? (
-        <Text style={styles.selected}>Este é o horário selecionado.</Text>
+        <Ionicons name="checkmark-circle" size={22} color={info.color} accessibilityLabel="Horário selecionado" />
       ) : (
-        <Pressable onPress={() => onSelect(best.predictionFor)} accessibilityRole="button">
-          <Text style={styles.action}>Selecionar este horário</Text>
+        <Pressable
+          onPress={() => onSelect(best.predictionFor)}
+          style={[styles.action, { borderColor: info.color }]}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.actionText, { color: info.color }]}>Selecionar</Text>
         </Pressable>
       )}
     </View>
@@ -35,35 +40,33 @@ export default function BestTimeHint({ items, selectedTime, onSelect }) {
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    padding: 14,
-    gap: 4,
-  },
-  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    borderRadius: RADIUS.card,
+    padding: 14,
+  },
+  text: {
+    flex: 1,
+    gap: 2,
   },
   title: {
     color: COLORS.ink,
     fontSize: 15,
     fontWeight: '700',
   },
-  text: {
+  detail: {
     color: COLORS.ink,
-    fontSize: 14,
+    fontSize: 13,
   },
   action: {
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
-  selected: {
-    color: COLORS.muted,
+  actionText: {
     fontSize: 13,
-    marginTop: 4,
+    fontWeight: '700',
   },
 });

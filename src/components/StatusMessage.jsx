@@ -1,23 +1,36 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { COLORS } from '../utils/formatters';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, RADIUS } from '../utils/theme';
 
 // Tela de estado: carregando, erro ou vazio. Sempre diz o que aconteceu e o que fazer.
-export default function StatusMessage({ title, message, loading = false, actions = [] }) {
+export default function StatusMessage({ title, message, loading = false, icon, actions = [] }) {
   return (
     <View style={styles.box}>
-      {loading && <ActivityIndicator size="large" color={COLORS.primary} style={styles.spinner} />}
+      {loading ? (
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      ) : (
+        icon && (
+          <View style={styles.iconCircle}>
+            <Ionicons name={icon} size={28} color={COLORS.primary} />
+          </View>
+        )
+      )}
       {title ? <Text style={styles.title}>{title}</Text> : null}
       {message ? <Text style={styles.message}>{message}</Text> : null}
-      {actions.map((action) => (
-        <Pressable
-          key={action.label}
-          onPress={action.onPress}
-          style={[styles.button, action.secondary && styles.buttonSecondary]}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.buttonText, action.secondary && styles.buttonTextSecondary]}>{action.label}</Text>
-        </Pressable>
-      ))}
+      {actions.length > 0 && (
+        <View style={styles.actions}>
+          {actions.map((action) => (
+            <Pressable
+              key={action.label}
+              onPress={action.onPress}
+              style={[styles.button, action.secondary && styles.buttonSecondary]}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.buttonText, action.secondary && styles.buttonTextSecondary]}>{action.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -25,12 +38,20 @@ export default function StatusMessage({ title, message, loading = false, actions
 const styles = StyleSheet.create({
   box: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.line,
     padding: 24,
-    alignItems: 'stretch',
+    alignItems: 'center',
+    gap: 10,
   },
-  spinner: {
-    marginBottom: 16,
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     color: COLORS.ink,
@@ -43,20 +64,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     textAlign: 'center',
+  },
+  actions: {
+    alignSelf: 'stretch',
+    gap: 8,
     marginTop: 8,
   },
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: RADIUS.control,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 16,
   },
   buttonSecondary: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: COLORS.line,
-    marginTop: 8,
   },
   buttonText: {
     color: '#FFFFFF',

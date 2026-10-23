@@ -1,22 +1,14 @@
 // Funções utilitárias (exportação nomeada): convertem dados da API em texto para a interface.
 
-export const COLORS = {
-  background: '#EEF3F7',
-  surface: '#FFFFFF',
-  ink: '#14213D',
-  muted: '#5C6B7A',
-  line: '#D5DEE7',
-  primary: '#1D5C96',
-  good: '#2A9D8F',
-  moderate: '#E09A2D',
-  unstable: '#D1495B',
-};
+import { COLORS } from './theme';
+
+export { COLORS };
 
 // A UI usa sempre o código (estável), nunca o texto da API, para decidir cor e ícone.
 export const QUALITY = {
-  GOOD: { label: 'Boa', description: 'Conexão prevista adequada', color: COLORS.good, bars: 3 },
-  MODERATE: { label: 'Moderada', description: 'Pode haver instabilidade', color: COLORS.moderate, bars: 2 },
-  UNSTABLE: { label: 'Instável', description: 'Considere recursos offline', color: COLORS.unstable, bars: 1 },
+  GOOD: { label: 'Boa', description: 'Conexão prevista adequada', color: COLORS.good, soft: COLORS.goodSoft, bars: 3 },
+  MODERATE: { label: 'Moderada', description: 'Pode haver instabilidade', color: COLORS.moderate, soft: COLORS.moderateSoft, bars: 2 },
+  UNSTABLE: { label: 'Instável', description: 'Considere recursos offline', color: COLORS.unstable, soft: COLORS.unstableSoft, bars: 1 },
 };
 
 export const RECOMMENDATION_TITLES = {
@@ -25,13 +17,14 @@ export const RECOMMENDATION_TITLES = {
   PREPARE_OFFLINE: 'Prepare conteúdo offline',
 };
 
+// `icon` é o nome do ícone no conjunto Ionicons (vem junto com o Expo).
 export const ACTIVITIES = [
-  { code: 'VIDEO_CALL', label: 'Chamada de vídeo' },
-  { code: 'AUDIO_CALL', label: 'Chamada de voz' },
-  { code: 'STREAMING', label: 'Streaming' },
-  { code: 'FILE_UPLOAD', label: 'Envio de arquivos' },
-  { code: 'WEB_BROWSING', label: 'Navegação' },
-  { code: 'MESSAGING', label: 'Mensagens' },
+  { code: 'VIDEO_CALL', label: 'Chamada de vídeo', icon: 'videocam-outline' },
+  { code: 'AUDIO_CALL', label: 'Chamada de voz', icon: 'call-outline' },
+  { code: 'STREAMING', label: 'Streaming', icon: 'play-circle-outline' },
+  { code: 'FILE_UPLOAD', label: 'Envio de arquivos', icon: 'cloud-upload-outline' },
+  { code: 'WEB_BROWSING', label: 'Navegação', icon: 'globe-outline' },
+  { code: 'MESSAGING', label: 'Mensagens', icon: 'chatbubbles-outline' },
 ];
 
 // Ordem de preferência para escolher o melhor horário.
@@ -52,7 +45,7 @@ export const DEFAULT_DISCLAIMER =
   'A previsão está associada à probe RIPE Atlas selecionada como referência geográfica e não representa uma medição direta do dispositivo do usuário.';
 
 export function qualityInfo(code) {
-  return QUALITY[code] || { label: code, description: '', color: COLORS.muted, bars: 0 };
+  return QUALITY[code] || { label: code, description: '', color: COLORS.muted, soft: COLORS.background, bars: 0 };
 }
 
 function pad(value) {
@@ -64,6 +57,12 @@ export function formatDateTime(isoString) {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return isoString;
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)} às ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function formatDay(isoString) {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
 }
 
 export function formatHour(isoString) {

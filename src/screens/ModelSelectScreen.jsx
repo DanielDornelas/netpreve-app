@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import StatusMessage from '../components/StatusMessage';
 import { getModels } from '../services/forecastApi';
-import { COLORS, describeError } from '../utils/formatters';
+import { describeError } from '../utils/formatters';
+import { COLORS, RADIUS } from '../utils/theme';
 
 // Tela de escolha do modelo de previsão (GET /api/v1/models).
 export default function ModelSelectScreen({ currentModelId, onConfirm, onCancel }) {
@@ -31,11 +33,7 @@ export default function ModelSelectScreen({ currentModelId, onConfirm, onCancel 
   if (loading) {
     return (
       <View style={styles.center}>
-        <StatusMessage
-          loading
-          title="Conectando ao servidor"
-          message="A primeira conexão pode levar até um minuto."
-        />
+        <StatusMessage loading title="Conectando ao servidor" message="A primeira conexão pode levar até um minuto." />
       </View>
     );
   }
@@ -44,6 +42,7 @@ export default function ModelSelectScreen({ currentModelId, onConfirm, onCancel 
     return (
       <View style={styles.center}>
         <StatusMessage
+          icon="cloud-offline-outline"
           title="Não foi possível carregar os modelos"
           message={describeError(error)}
           actions={[{ label: 'Tentar novamente', onPress: loadModels }]}
@@ -54,14 +53,15 @@ export default function ModelSelectScreen({ currentModelId, onConfirm, onCancel 
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Modelo de previsão</Text>
+      <Text style={styles.title}>Escolha um modelo de previsão</Text>
       <Text style={styles.subtitle}>
-        Cada modelo foi feito por um grupo diferente. Troque à vontade para comparar as abordagens: a lista não
-        é um ranking.
+        Cada modelo foi feito por um grupo diferente. Troque quando quiser para comparar as abordagens: a lista não é
+        um ranking.
       </Text>
 
       {models.map((model) => {
         const selected = model.id === selectedId;
+        const initial = model.name.trim().slice(-1).toUpperCase();
         return (
           <Pressable
             key={model.id}
@@ -70,15 +70,21 @@ export default function ModelSelectScreen({ currentModelId, onConfirm, onCancel 
             accessibilityRole="radio"
             accessibilityState={{ selected }}
           >
-            <View style={[styles.radio, selected && styles.radioSelected]}>
-              {selected && <View style={styles.radioDot} />}
+            <View style={[styles.avatar, selected && styles.avatarSelected]}>
+              <Text style={[styles.avatarText, selected && styles.avatarTextSelected]}>{initial}</Text>
             </View>
             <View style={styles.optionText}>
               <Text style={styles.optionName}>{model.name}</Text>
               <Text style={styles.optionDetail}>
-                {model.groupName} · versão {model.version}
+                {model.groupName}, versão {model.version}
               </Text>
+              {model.description ? <Text style={styles.optionDescription}>{model.description}</Text> : null}
             </View>
+            <Ionicons
+              name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={24}
+              color={selected ? COLORS.primary : COLORS.line}
+            />
           </Pressable>
         );
       })}
@@ -114,47 +120,53 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.ink,
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   subtitle: {
     color: COLORS.muted,
     fontSize: 15,
     lineHeight: 21,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
+    borderRadius: RADIUS.card,
     padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.line,
   },
   optionSelected: {
     borderColor: COLORS.primary,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
     borderWidth: 2,
-    borderColor: COLORS.line,
+    padding: 15,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioSelected: {
-    borderColor: COLORS.primary,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  avatarSelected: {
     backgroundColor: COLORS.primary,
+  },
+  avatarText: {
+    color: COLORS.ink,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  avatarTextSelected: {
+    color: '#FFFFFF',
   },
   optionText: {
     flex: 1,
+    gap: 2,
   },
   optionName: {
     color: COLORS.ink,
@@ -164,17 +176,21 @@ const styles = StyleSheet.create({
   optionDetail: {
     color: COLORS.muted,
     fontSize: 14,
-    marginTop: 2,
+  },
+  optionDescription: {
+    color: COLORS.muted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: RADIUS.control,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -188,5 +204,6 @@ const styles = StyleSheet.create({
   cancelText: {
     color: COLORS.primary,
     fontSize: 15,
+    fontWeight: '600',
   },
 });

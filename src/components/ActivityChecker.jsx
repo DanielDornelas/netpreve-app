@@ -1,27 +1,16 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  ACTIVITIES,
-  COLORS,
-  RECOMMENDATION_TITLES,
-  describeError,
-  formatDateTime,
-  qualityInfo,
-} from '../utils/formatters';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, RADIUS } from '../utils/theme';
+import { ACTIVITIES, RECOMMENDATION_TITLES, describeError, formatDateTime, qualityInfo } from '../utils/formatters';
 
 // Escolha de atividade + resultado de POST /activity/check.
 // Todo o estado fica na HomeScreen; este componente só recebe props e avisa eventos.
-export default function ActivityChecker({
-  selectedTime,
-  activity,
-  onSelectActivity,
-  onCheck,
-  loading,
-  result,
-  error,
-}) {
+export default function ActivityChecker({ selectedTime, activity, onSelectActivity, onCheck, loading, result, error }) {
+  const disabled = !activity || loading;
+
   return (
     <View style={styles.box}>
-      <Text style={styles.question}>O que você quer fazer às {formatDateTime(selectedTime)}?</Text>
+      <Text style={styles.question}>O que você quer fazer em {formatDateTime(selectedTime)}?</Text>
 
       <View style={styles.chips}>
         {ACTIVITIES.map((item) => {
@@ -34,6 +23,7 @@ export default function ActivityChecker({
               accessibilityRole="button"
               accessibilityState={{ selected }}
             >
+              <Ionicons name={item.icon} size={16} color={selected ? '#FFFFFF' : COLORS.ink} />
               <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{item.label}</Text>
             </Pressable>
           );
@@ -42,14 +32,16 @@ export default function ActivityChecker({
 
       <Pressable
         onPress={onCheck}
-        disabled={!activity || loading}
-        style={[styles.button, (!activity || loading) && styles.buttonDisabled]}
+        disabled={disabled}
+        style={[styles.button, disabled && styles.buttonDisabled]}
         accessibilityRole="button"
       >
-        <Text style={styles.buttonText}>Verificar atividade</Text>
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.buttonText}>Verificar atividade</Text>
+        )}
       </Pressable>
-
-      {loading && <ActivityIndicator style={styles.loading} color={COLORS.primary} />}
 
       {error && !loading && <Text style={styles.error}>{describeError(error)}</Text>}
 
@@ -60,15 +52,21 @@ export default function ActivityChecker({
 
 function ActivityResult({ result }) {
   const info = qualityInfo(result.forecast.quality);
+  const color = result.suitable ? COLORS.good : COLORS.unstable;
+  const soft = result.suitable ? COLORS.goodSoft : COLORS.unstableSoft;
+
   return (
-    <View style={[styles.result, { borderLeftColor: result.suitable ? COLORS.good : COLORS.unstable }]}>
-      <Text style={styles.resultTitle}>
-        {result.suitable ? 'Bom momento para isso' : 'Melhor escolher outro horário'}
-      </Text>
-      <Text style={styles.resultText}>
-        Qualidade prevista: {info.label}. {RECOMMENDATION_TITLES[result.recommendation.code] || ''}
-      </Text>
-      <Text style={styles.resultText}>{result.recommendation.message}</Text>
+    <View style={[styles.result, { backgroundColor: soft }]}>
+      <Ionicons name={result.suitable ? 'checkmark-circle' : 'close-circle'} size={28} color={color} />
+      <View style={styles.resultText}>
+        <Text style={[styles.resultTitle, { color }]}>
+          {result.suitable ? 'Bom momento para isso' : 'Melhor escolher outro horário'}
+        </Text>
+        <Text style={styles.resultDetail}>
+          Qualidade prevista: {info.label}. {RECOMMENDATION_TITLES[result.recommendation.code] || ''}.
+        </Text>
+        <Text style={styles.resultDetail}>{result.recommendation.message}</Text>
+      </View>
     </View>
   );
 }
@@ -76,14 +74,16 @@ function ActivityResult({ result }) {
 const styles = StyleSheet.create({
   box: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    padding: 18,
+    gap: 14,
   },
   question: {
     color: COLORS.ink,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 12,
   },
   chips: {
     flexDirection: 'row',
@@ -91,15 +91,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 20,
+    borderRadius: RADIUS.pill,
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   chipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.ink,
+    borderColor: COLORS.ink,
   },
   chipText: {
     color: COLORS.ink,
@@ -110,39 +113,37 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
+    borderRadius: RADIUS.control,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 16,
   },
   buttonDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
-  loading: {
-    marginTop: 12,
-  },
   error: {
     color: COLORS.unstable,
     fontSize: 14,
-    marginTop: 12,
   },
   result: {
-    borderLeftWidth: 4,
-    paddingLeft: 12,
-    marginTop: 16,
+    flexDirection: 'row',
+    gap: 12,
+    borderRadius: RADIUS.control,
+    padding: 14,
+  },
+  resultText: {
+    flex: 1,
     gap: 4,
   },
   resultTitle: {
-    color: COLORS.ink,
     fontSize: 16,
     fontWeight: '700',
   },
-  resultText: {
+  resultDetail: {
     color: COLORS.ink,
     fontSize: 14,
     lineHeight: 20,

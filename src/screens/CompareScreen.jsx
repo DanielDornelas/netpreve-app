@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import QualitySignal from '../components/QualitySignal';
 import StatusMessage from '../components/StatusMessage';
 import { compareModels } from '../services/forecastApi';
-import { COLORS, describeError, formatDateTime, formatMs, formatPercent, qualityInfo } from '../utils/formatters';
+import { describeError, formatDateTime, formatMs, formatPercent, qualityInfo } from '../utils/formatters';
+import { COLORS, RADIUS } from '../utils/theme';
 
 // Compara a previsão de todos os modelos para o mesmo ponto e horário.
 // A ordem é a da API (por nome): não é um ranking e não declara vencedor.
@@ -37,6 +39,7 @@ export default function CompareScreen({ probeId, predictionFor, currentModelId, 
     if (error) {
       return (
         <StatusMessage
+          icon="alert-circle-outline"
           title={error.code === 'NO_COMMON_PREDICTION' ? 'Sem horário em comum' : 'Não foi possível comparar'}
           message={
             error.code === 'NO_COMMON_PREDICTION'
@@ -51,11 +54,14 @@ export default function CompareScreen({ probeId, predictionFor, currentModelId, 
       );
     }
 
+    // Barras de tempo de resposta proporcionais ao maior valor da comparação.
+    const maxRtt = Math.max(...comparison.models.map((item) => item.predictedAvgRttMs), 1);
+
     return (
       <>
         <Text style={styles.subtitle}>
-          Previsão de cada modelo para {formatDateTime(comparison.predictionFor)}, no mesmo ponto de medição.
-          Cada grupo usou uma abordagem diferente: as diferenças mostram como elas divergem, não qual está certa.
+          Previsão de cada modelo para {formatDateTime(comparison.predictionFor)}, no mesmo ponto de medição. Cada
+          grupo usou uma abordagem diferente: as diferenças mostram como elas divergem, não qual está certa.
         </Text>
 
         {comparison.models.map((item) => {
@@ -65,13 +71,27 @@ export default function CompareScreen({ probeId, predictionFor, currentModelId, 
             <View key={item.modelId} style={[styles.row, isCurrent && styles.rowCurrent]}>
               <View style={styles.rowHeader}>
                 <Text style={styles.modelName}>{item.modelName}</Text>
-                {isCurrent && <Text style={styles.currentTag}>em uso</Text>}
-              </View>
-              <View style={styles.rowBody}>
-                <QualitySignal quality={item.quality} size="small" />
+                {isCurrent && (
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>Em uso</Text>
+                  </View>
+                )}
+                <View style={styles.spacer} />
+                <QualitySignal quality={item.quality} size="medium" />
                 <Text style={[styles.quality, { color: info.color }]}>{info.label}</Text>
-                <Text style={styles.metric}>{formatMs(item.predictedAvgRttMs)}</Text>
-                <Text style={styles.metric}>{formatPercent(item.predictedPacketLossPct)} de perda</Text>
+              </View>
+
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    { width: `${(item.predictedAvgRttMs / maxRtt) * 100}%`, backgroundColor: info.color },
+                  ]}
+                />
+              </View>
+              <View style={styles.values}>
+                <Text style={styles.value}>{formatMs(item.predictedAvgRttMs)} de tempo de resposta</Text>
+                <Text style={styles.value}>{formatPercent(item.predictedPacketLossPct)} de perda</Text>
               </View>
             </View>
           );
@@ -83,10 +103,10 @@ export default function CompareScreen({ probeId, predictionFor, currentModelId, 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>Comparar modelos</Text>
-        <Pressable onPress={onBack} accessibilityRole="button">
-          <Text style={styles.back}>Voltar</Text>
+        <Pressable onPress={onBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Voltar">
+          <Ionicons name="arrow-back" size={22} color={COLORS.ink} />
         </Pressable>
+        <Text style={styles.title}>Comparar modelos</Text>
       </View>
       {renderBody()}
     </ScrollView>
@@ -96,38 +116,46 @@ export default function CompareScreen({ probeId, predictionFor, currentModelId, 
 const styles = StyleSheet.create({
   content: {
     padding: 20,
-    gap: 10,
+    gap: 12,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
+  },
+  back: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     color: COLORS.ink,
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  back: {
-    color: COLORS.primary,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   subtitle: {
     color: COLORS.muted,
     fontSize: 15,
     lineHeight: 21,
-    marginBottom: 6,
   },
   row: {
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: COLORS.line,
     padding: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    gap: 10,
   },
   rowCurrent: {
     borderColor: COLORS.primary,
+    borderWidth: 2,
+    padding: 15,
   },
   rowHeader: {
     flexDirection: 'row',
@@ -139,24 +167,43 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
-  currentTag: {
+  tag: {
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+  },
+  tagText: {
     color: COLORS.primary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  rowBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 8,
-  },
-  quality: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
   },
-  metric: {
+  spacer: {
+    flex: 1,
+  },
+  quality: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  barTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.background,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  values: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  value: {
     color: COLORS.ink,
-    fontSize: 14,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
   },
 });
