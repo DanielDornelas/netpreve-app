@@ -1,4 +1,16 @@
-# NetPrevê
+[README.md](https://github.com/user-attachments/files/34498343/README.md)
+<h1 align="center">NetPrevê</h1>
+
+<p align="center">
+  <strong>Saiba antes se a sua internet vai aguentar a aula, a reunião ou o envio daquele arquivo.</strong>
+</p>
+
+<p align="center">
+  <img alt="React Native" src="https://img.shields.io/badge/React_Native-Expo_SDK_57-1F5E8C">
+  <img alt="API" src="https://img.shields.io/badge/API-Java_17_%2B_Spring_Boot-0F2340">
+  <img alt="Plataformas" src="https://img.shields.io/badge/roda_em-Android_%7C_iOS_%7C_Web-1F8A78">
+  <img alt="Licença" src="https://img.shields.io/badge/licen%C3%A7a-MIT-lightgrey">
+</p>
 
 App em React Native (Expo) que mostra a **previsão da qualidade da internet** perto de você: se a conexão deve estar boa, moderada ou instável nas próximas horas, e se dá para fazer uma chamada de vídeo, um streaming ou um envio de arquivos naquele horário.
 
@@ -6,6 +18,47 @@ O app consome a **Connectivity Forecast API** da squad Soft in. Hard out.:
 [github.com/DanielDornelas/connectivity-forecast-squad-15](https://github.com/DanielDornelas/connectivity-forecast-squad-15)
 
 > **Os dados são de exemplo.** A API usa previsões fictícias e fixas (agosto de 2026) e não mede a rede do seu aparelho. A previsão é ligada a um ponto de medição de referência próximo de você, e o app mostra esse aviso na tela.
+
+---
+
+## Telas
+
+<table>
+  <tr>
+    <td align="center" width="20%"><img src="docs/telas/01-escolha-do-modelo.png" alt="Tela de escolha do modelo de previsão" width="170"></td>
+    <td align="center" width="20%"><img src="docs/telas/02-previsao.png" alt="Tela de previsão com qualidade Moderada, 73 ms e 3,9% de perda" width="170"></td>
+    <td align="center" width="20%"><img src="docs/telas/03-proximas-horas.png" alt="Faixa das próximas horas com o melhor horário em destaque" width="170"></td>
+    <td align="center" width="20%"><img src="docs/telas/04-vai-dar-para-fazer.png" alt="Verificação de chamada de vídeo com o resultado Melhor escolher outro horário" width="170"></td>
+    <td align="center" width="20%"><img src="docs/telas/05-comparar-modelos.png" alt="Comparação dos quatro modelos no mesmo horário" width="170"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>1. Escolha do modelo</b></td>
+    <td align="center"><b>2. Previsão</b></td>
+    <td align="center"><b>3. Próximas horas</b></td>
+    <td align="center"><b>4. Vai dar para fazer?</b></td>
+    <td align="center"><b>5. Comparar modelos</b></td>
+  </tr>
+</table>
+
+### Um uso típico
+
+1. **Escolha um modelo de previsão.** Cada modelo foi feito por um grupo diferente; a escolha fica salva no aparelho e pode ser trocada depois.
+2. **Veja a previsão perto de você.** Na tela 2, a conexão está **Moderada**: 73 ms de tempo de resposta e 3,9% de perda de pacotes. Por isso, o app recomenda **reduzir o uso de rede**.
+3. **Confira as próximas horas.** Cada coluna é um horário, com altura e cor pela qualidade. O **melhor horário** aparece em destaque e pode ser selecionado com um toque.
+4. **Pergunte se dá para fazer uma atividade.** Na tela 4, uma chamada de vídeo às 15h recebeu **“Melhor escolher outro horário”**, porque a qualidade prevista é Instável.
+5. **Compare os modelos.** A tela 5 mostra o que os quatro modelos preveem para o mesmo local e horário, lado a lado, sem declarar vencedor.
+
+A qualidade nunca depende só da cor: o app sempre mostra a **palavra** (Boa, Moderada ou Instável), as **barrinhas de sinal** e a **cor** juntas.
+
+---
+
+## Como o app e a API se conectam
+
+<p align="center">
+  <img src="docs/arquitetura.png" alt="Diagrama: o usuário usa o app, que chama a API por HTTP/JSON; na API, Controller, Service e Repository leem as fixtures" width="820">
+</p>
+
+O app tem um único arquivo que fala com a API (`src/services/forecastApi.js`). Na API, cada pedido passa pelo **controller**, que recebe a requisição; pelo **service**, que aplica as regras de classificação; e pelo **repository**, que lê as previsões e o catálogo de modelos de arquivos fixos.
 
 ---
 
@@ -26,6 +79,9 @@ Se o usuário negar a localização, ele pode **escolher um local na lista** de 
 ## Endpoints e como o app traduz cada um
 
 Toda chamada à API fica em `src/services/forecastApi.js`. O app **não altera os dados**: ele só os transforma em texto, cor e ícone. As tabelas abaixo mostram, para cada endpoint, o que a API devolve e o que aparece na tela.
+
+<details>
+<summary><b>Ver o detalhe de cada endpoint, das traduções e das mensagens de erro</b></summary>
 
 ### `GET /api/v1/health`
 
@@ -148,6 +204,8 @@ O app envia `modelId`, `latitude`, `longitude`, o horário selecionado (`dateTim
 | `DATASET_UNAVAILABLE`, `INTERNAL_ERROR` | O servidor está com problemas. Tente novamente mais tarde. |
 
 **Horários.** A API envia tudo em UTC (sufixo `Z`). O app converte para o horário do aparelho: no Brasil (UTC−3), `2026-08-20T23:00:00Z` aparece como **20/08 às 20:00**.
+
+</details>
 
 ---
 
@@ -290,6 +348,9 @@ src/
     formatters.js             cores, rótulos, horários (UTC → hora local), melhor horário e mensagens de erro
     places.js                 distância entre pontos e nome da região de cada ponto de medição
     theme.js                  cores e raios usados em todas as telas
+docs/
+  telas/                      capturas das telas usadas neste README
+  arquitetura.png             diagrama do app e da API
 ```
 
 > A API informa só as coordenadas dos pontos de medição, sem nomes de cidades. Os nomes que aparecem no app ("Região de São Paulo") vêm de uma lista de referência do próprio app, em `src/utils/places.js`.
@@ -310,4 +371,4 @@ Cada arquivo tem uma responsabilidade: as **telas** controlam o estado e as inte
 ---
 
 Projeto acadêmico do Centro Universitário Braz Cubas: Programação para Dispositivos Móveis e Análise e Projeto de Sistemas II, 2026/2.
-Squad **Soft in. Hard out.**: Daniel, Melissa, Samuel, Vinicius e Alexander.
+Squad **Soft in. Hard out.** (squad 15): Daniel da Silva Dornelas, Melissa Alves dos Santos, Samuel Conceição de Souza, Vinícius Araújo Alves e Alexander Penninches Iwanami.
