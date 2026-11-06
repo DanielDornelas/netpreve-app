@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/34498343/README.md)
+
 <h1 align="center">NetPrevê</h1>
 
 <p align="center">
